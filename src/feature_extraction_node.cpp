@@ -64,18 +64,11 @@ int main(int argc, char** argv)
   while (rclcpp::ok())
   {
     if (feature_extractor->import_samples)
-    {
-      using RunOptimiseAction = cam_lidar_calibration::action::RunOptimise;
-      auto action_client = rclcpp_action::create_client<RunOptimiseAction>(node, "run_optimise");
-      
-      if (action_client->wait_for_action_server(std::chrono::seconds(10)))
-      {
-        auto goal_msg = RunOptimiseAction::Goal();
-        action_client->async_send_goal(goal_msg);
-      }
-      break;
+  {
+    feature_extractor->optimise(nullptr);
+    rclcpp::shutdown();
+    return 0;
     }
-    
     feature_extractor->visualiseSamples();
     loop_rate.sleep();
   }

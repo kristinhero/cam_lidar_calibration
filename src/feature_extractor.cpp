@@ -49,7 +49,7 @@
 #include <opencv2/opencv.hpp>
 #include <opencv2/calib3d.hpp>
 #include <opencv2/core/eigen.hpp>
-#include <cv_bridge/cv_bridge.hpp>
+#include <cv_bridge/cv_bridge.h>
 
 #include "cam_lidar_calibration/point_xyzir.h"
 
@@ -128,6 +128,7 @@ FeatureExtractor::FeatureExtractor(rclcpp::Node::SharedPtr node)
   // Get parameters
   import_path_ = node_->declare_parameter<std::string>("import_path", "");
   import_samples = node_->declare_parameter<bool>("import_samples", false);
+  RCLCPP_INFO(node_->get_logger(), "import_samples = %d", import_samples);
   num_lowestvoq_ = node_->declare_parameter<int>("num_lowestvoq", 50);
   distance_offset_ = node_->declare_parameter<double>("distance_offset_mm", 0.0);
   loadParams(node_, i_params_);
@@ -374,7 +375,6 @@ void FeatureExtractor::optimise(const std::shared_ptr<rclcpp_action::ServerGoalH
     std::string savesamplespath = newdata_folder_ + "/poses.csv";
     std::ofstream save_samples;
     save_samples.open(savesamplespath, std::ios_base::out | std::ios_base::trunc);
-
     for (OptimisationSample s : optimiser_->samples)
     {
       save_samples << s.camera_centre.x << "," << s.camera_centre.y << "," << s.camera_centre.z << "\n";

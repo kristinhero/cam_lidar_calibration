@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 # Copyright 2023 Australian Centre For Robotics
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -17,12 +17,6 @@
 
 import os
 import csv
-import rospkg
-import rospy
-import geometry_msgs.msg
-from tf.transformations import quaternion_from_euler, euler_from_quaternion
-
-from std_msgs.msg import Float64MultiArray
 
 import numpy as np
 import pandas
@@ -64,27 +58,6 @@ def fit_gauss(df, key, metric, num_bins):
     }
 
 
-def publish_params(gauss):
-
-    pub = rospy.Publisher("/extrinsic_calib_param", Float64MultiArray, queue_size=10)
-    rate = rospy.Rate(10)
-    msg = Float64MultiArray()
-
-    means, stdevs = [], []
-    for param in gauss:
-        mean = param["mu"]
-        stdev = param["sigma"]
-        means.append(mean)
-        stdevs.append(stdev)
-
-    # Publish data in the order: roll pitch yaw x y z
-    msg.data = means
-
-    while not rospy.is_shutdown():
-        pub.publish(msg)
-        rate.sleep()
-
-
 def visualise_results(gauss, nbins_list, degree):
 
     colors = [
@@ -116,7 +89,7 @@ def visualise_results(gauss, nbins_list, degree):
         ax[r, c].hist(
             param["samples"], bins=nbins_list[idx], alpha=0.6, color=colors[idx]
         )
-        ax[r, c].plot(x, y, "b-", color="black")
+        ax[r, c].plot(x, y, "-", color="black")
         ax[r, c].set_xlabel(param["key"] + " (" + param["metric"] + ")")
         ax[r, c].set_ylabel("Frequency")
         ax[r, c].set_ylim(0, max(y) + float(max(y)) / 5)
@@ -157,21 +130,28 @@ def visualise_results(gauss, nbins_list, degree):
 
 
 if __name__ == "__main__":
-    rospy.init_node("visualise_results", anonymous=True)
-    rospy.loginfo("Starting visualise_results")
-    path = rospy.get_param("~csv")
-    degree = rospy.get_param("~degree")
-    bin_width_trans = rospy.get_param("~trans_binwidth")  # in metres
-    bin_width_rot = rospy.get_param("~rot_binwidth_deg") * np.pi / 180  # deg to rads
+    import argparse
+
+    parser = argparse.ArgumentParser(description="Visualise calibration results")
+    parser.add_argument("--csv", required=True, help="Path to calibration CSV file")
+    parser.add_argument("--degree", action="store_true", help="Display rotation in degrees")
+    parser.add_argument("--trans_binwidth", type=float, default=0.05, help="Translation bin width (m)")
+    parser.add_argument("--rot_binwidth_deg", type=float, default=1.0, help="Rotation bin width (deg)")
+
+    args = parser.parse_args()
+
+    path = args.csv
+    degree = args.degree
+    bin_width_trans = args.trans_binwidth
+    bin_width_rot = args.rot_binwidth_deg * np.pi / 180
 
     if not os.path.exists(path):
         raise Exception("GAUSS FITTING - No file found at: {}".format(path))
-        exit()
 
-    rospy.loginfo("Opening file at: " + path)
-    rospy.loginfo("Using degrees for rotation")
+    print("Opening file at:", path)
+    print("Using degrees for rotation:", degree)
 
-    # Read data and fit GMM
+    # Read data
     df_orig = pandas.read_csv(path)
     df = df_orig.copy()
 
@@ -259,7 +239,4 @@ if __name__ == "__main__":
     print("\n")
     visualise_results(gauss, nbins_list, degree)
 
-    try:
-        publish_params(gauss)
-    except rospy.ROSInterruptException:
-        pass
+plt.show()

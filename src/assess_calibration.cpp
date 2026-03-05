@@ -16,7 +16,7 @@
  * Modified for ROS2 Jazzy
  */
 
-#include <cv_bridge/cv_bridge.hpp>
+#include <cv_bridge/cv_bridge.h>
 #include <geometry_msgs/msg/transform_stamped.hpp>
 #include <pcl_conversions/pcl_conversions.h>
 #include <pcl/common/transforms.h>
