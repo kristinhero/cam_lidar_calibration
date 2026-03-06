@@ -1,3 +1,29 @@
+# Humble Edits
+## 1.2 Quick start Humble
+
+You can verify that this repository runs successfully by running this package on our provided quick-start data.
+
+**1. Run the calibration process**
+
+This first step takes the saved poses, computes the best sets with the lowest VOQ score.
+```bash
+ros2 launch cam_lidar_calibration run_optimiser.launch.py import_samples:=true
+```
+After calibration, the output is saved in the same directory as the imported samples. For this quickstart example, the output is saved in `cam_lidar_calibration/data/vlp/`.
+
+**2. Obtain and assess calibration results**
+This python script is no longer a ROS node, simply run the python file and pass the parameters. You probably need to create a virtual environment to run Numpy version <2 to match ROS 2 Humble.
+
+This step gives the estimated calibration parameters by taking a filtered mean of the best sets, and displaying the gaussian fitted histogram of estimated parameters. Additionally, we provide an assessment of the calibration results by computing the reprojection error over all provided data samples and a visualisation (if specified).
+
+To obtain and assess the calibration output, provide the absolute path of the csv output file generated in the first step:
+```bash
+python3 src/cam_lidar_calibration/scripts/visualise_results.py --csv path-to-csv.csv --degree --trans_binwidth 0.05 --rot_binwidth_deg 1.0
+
+```
+
+That's it! If this quick start worked successfully, you can begin using this tool for your own data. If not, please create an issue and we'll aim to resolve it promptly.
+
 # Camera-LiDAR Calibration - V 3.0 (ROS2 Jazzy)
 
 This is the ROS2 Jazzy version of the official code release of the ITSC 2021 paper, ["Optimising the selection of samples for robust lidar camera calibration"](https://arxiv.org/abs/2103.12287).
