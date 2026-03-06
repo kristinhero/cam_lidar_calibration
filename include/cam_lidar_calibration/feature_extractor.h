@@ -38,7 +38,7 @@
 #include "cam_lidar_calibration/srv/optimise.hpp"
 #include "cam_lidar_calibration/load_params.h"
 #include "cam_lidar_calibration/optimiser.h"
-#include "cam_lidar_calibration/point_xyzir.h"
+#include "cam_lidar_calibration/point_xyzrtlt.h"
 
 typedef message_filters::Subscriber<sensor_msgs::msg::Image> image_sub_type;
 typedef message_filters::Subscriber<sensor_msgs::msg::PointCloud2> pc_sub_type;
@@ -67,8 +67,8 @@ public:
   bool import_samples;
 
 private:
-  void passthrough(const pcl::PointCloud<pcl::PointXYZIR>::ConstPtr& input_pc,
-                   pcl::PointCloud<pcl::PointXYZIR>::Ptr& output_pc);
+  void passthrough(const pcl::PointCloud<pcl::PointXYZRTLT>::ConstPtr& input_pc,
+                   pcl::PointCloud<pcl::PointXYZRTLT>::Ptr& output_pc);
 
   std::tuple<std::vector<cv::Point3d>, cv::Mat> locateChessboard(const sensor_msgs::msg::Image::ConstSharedPtr& image);
 
@@ -76,17 +76,17 @@ private:
 
   void publishBoardPointCloud();
 
-  std::tuple<pcl::PointCloud<pcl::PointXYZIR>::Ptr, cv::Point3d>
+  std::tuple<pcl::PointCloud<pcl::PointXYZRTLT>::Ptr, cv::Point3d>
 
-  extractBoard(const pcl::PointCloud<pcl::PointXYZIR>::Ptr& cloud, OptimisationSample& sample);
+  extractBoard(const pcl::PointCloud<pcl::PointXYZRTLT>::Ptr& cloud, OptimisationSample& sample);
 
   std::pair<pcl::ModelCoefficients, pcl::ModelCoefficients>
-  findEdges(const pcl::PointCloud<pcl::PointXYZIR>::Ptr& edge_pair_cloud);
+  findEdges(const pcl::PointCloud<pcl::PointXYZRTLT>::Ptr& edge_pair_cloud);
 
   void callback_camerainfo(const sensor_msgs::msg::CameraInfo::ConstSharedPtr& msg);
 
-  void distoffset_passthrough(const pcl::PointCloud<pcl::PointXYZIR>::ConstPtr& input_pc,
-                              pcl::PointCloud<pcl::PointXYZIR>::Ptr& output_pc);
+  void distoffset_passthrough(const pcl::PointCloud<pcl::PointXYZRTLT>::ConstPtr& input_pc,
+                              pcl::PointCloud<pcl::PointXYZRTLT>::Ptr& output_pc);
 
   std::string getDateTime();
 
@@ -120,7 +120,7 @@ private:
                          // Robosense to camera A0 has big timestamp misalign
   int num_samples_ = 0;
 
-  std::vector<pcl::PointCloud<pcl::PointXYZIR>::Ptr> pc_samples_;
+  std::vector<pcl::PointCloud<pcl::PointXYZRTLT>::Ptr> pc_samples_;
   rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr board_cloud_pub_;
   rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr subtracted_cloud_pub_;
   rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr experimental_region_pub_;
@@ -137,7 +137,7 @@ private:
   std::string newdata_folder_;
   bool valid_camera_info_;
 
-  std::vector<pcl::PointCloud<pcl::PointXYZIR>::Ptr> background_pc_samples_;
+  std::vector<pcl::PointCloud<pcl::PointXYZRTLT>::Ptr> background_pc_samples_;
   double board_width_ = 0.0f;
   double board_height_ = 0.0f;
 

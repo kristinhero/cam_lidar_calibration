@@ -51,13 +51,13 @@
 #include <opencv2/core/eigen.hpp>
 #include <cv_bridge/cv_bridge.h>
 
-#include "cam_lidar_calibration/point_xyzir.h"
+#include "cam_lidar_calibration/point_xyzrtlt.h"
 
 using cv::findChessboardCorners;
 using cv::Mat_;
 using cv::Size;
 using cv::TermCriteria;
-using PointCloud = pcl::PointCloud<pcl::PointXYZIR>;
+using PointCloud = pcl::PointCloud<pcl::PointXYZRTLT>;
 
 namespace cam_lidar_calibration
 {
@@ -697,7 +697,7 @@ void FeatureExtractor::passthrough(const PointCloud::ConstPtr& input_pc, PointCl
   PointCloud::Ptr x(new PointCloud);
   PointCloud::Ptr z(new PointCloud);
   // Filter out the experimental region
-  pcl::PassThrough<pcl::PointXYZIR> pass;
+  pcl::PassThrough<pcl::PointXYZRTLT> pass;
   pass.setInputCloud(input_pc);
   pass.setFilterFieldName("x");
   pass.setFilterLimits(bounds_.x_min, bounds_.x_max);
@@ -882,14 +882,14 @@ FeatureExtractor::locateChessboard(const sensor_msgs::msg::Image::ConstSharedPtr
 }
 
 // Pushes the board cloud into pc_samples
-std::tuple<pcl::PointCloud<pcl::PointXYZIR>::Ptr, cv::Point3d>
+std::tuple<pcl::PointCloud<pcl::PointXYZRTLT>::Ptr, cv::Point3d>
 FeatureExtractor::extractBoard(const PointCloud::Ptr& cloud, OptimisationSample& sample)
 {
   // Fit a plane through the board point cloud
   // Inliers give the indices of the points that are within the RANSAC threshold
   pcl::ModelCoefficients::Ptr coefficients(new pcl::ModelCoefficients());
   pcl::PointIndices::Ptr inliers(new pcl::PointIndices());
-  pcl::SACSegmentation<pcl::PointXYZIR> seg;
+  pcl::SACSegmentation<pcl::PointXYZRTLT> seg;
   seg.setOptimizeCoefficients(true);
   seg.setModelType(pcl::SACMODEL_PLANE);
   seg.setMethodType(pcl::SAC_RANSAC);
@@ -914,7 +914,7 @@ FeatureExtractor::extractBoard(const PointCloud::Ptr& cloud, OptimisationSample&
   // Project the inliers on the fitted plane
   // When it freezes the chessboard after capture, what you see are the inlier
   // points (filtered from the original)
-  pcl::ProjectInliers<pcl::PointXYZIR> proj;
+  pcl::ProjectInliers<pcl::PointXYZRTLT> proj;
   proj.setModelType(pcl::SACMODEL_PLANE);
   proj.setInputCloud(cloud);
   proj.setModelCoefficients(coefficients);
@@ -930,7 +930,7 @@ FeatureExtractor::findEdges(const PointCloud::Ptr& edge_pair_cloud)
   pcl::PointIndices::Ptr full_inliers(new pcl::PointIndices), half_inliers(new pcl::PointIndices);
   PointCloud::Ptr half_cloud(new PointCloud);
 
-  pcl::SACSegmentation<pcl::PointXYZIR> seg;
+  pcl::SACSegmentation<pcl::PointXYZRTLT> seg;
   seg.setModelType(pcl::SACMODEL_LINE);
   seg.setMethodType(pcl::SAC_RANSAC);
   seg.setDistanceThreshold(0.02);
@@ -943,7 +943,7 @@ FeatureExtractor::findEdges(const PointCloud::Ptr& edge_pair_cloud)
     return std::make_pair(full_coeff, full_coeff);
   }
 
-  pcl::ExtractIndices<pcl::PointXYZIR> extract;
+  pcl::ExtractIndices<pcl::PointXYZRTLT> extract;
   extract.setInputCloud(edge_pair_cloud);
   extract.setIndices(full_inliers);
   extract.setNegative(true);
@@ -959,7 +959,7 @@ FeatureExtractor::findEdges(const PointCloud::Ptr& edge_pair_cloud)
 
   // Fitting line2 through outlier points
   // Determine which is above the other
-  pcl::PointXYZIR full_min, full_max, half_min, half_max;
+  pcl::PointXYZRTLT full_min, full_max, half_min, half_max;
   pcl::getMinMax3D(*edge_pair_cloud, full_min, full_max);
   pcl::getMinMax3D(*half_cloud, half_min, half_max);
 
@@ -1018,11 +1018,11 @@ void FeatureExtractor::distoffset_passthrough(const PointCloud::ConstPtr& input_
       float r_do = r + distance_offset_ / 1000;
 
       // convert back to cartesian
-      pcl::PointXYZIR point;
+      pcl::PointXYZRTLT point;
       point.x = r_do * sinf(theta) * cosf(phi);
       point.y = r_do * sinf(theta) * sinf(phi);
       point.z = r_do * cosf(theta);
-      point.ring = p.ring;
+      point.line = p.line;
       point.intensity = p.intensity;
       distoffset_pcl->push_back(point);
     }
@@ -1048,9 +1048,9 @@ void FeatureExtractor::extractRegionOfInterest(const sensor_msgs::msg::Image::Co
     // pcl::getMinMax3D only works on x,y,z
     for (const auto& p : pointcloud->points)
     {
-      if (p.ring + 1 > i_params_.lidar_ring_count)
+      if (p.line + 1 > i_params_.lidar_ring_count)
       {
-        i_params_.lidar_ring_count = p.ring + 1;
+        i_params_.lidar_ring_count = p.line + 1;
       }
     }
     lidar_frame_ = pointcloud->header.frame_id;
@@ -1080,7 +1080,7 @@ void FeatureExtractor::extractRegionOfInterest(const sensor_msgs::msg::Image::Co
   if (background_pc_samples_.size() == 1)
   {
     // Instantiate octree-based point cloud change detection class
-    pcl::octree::OctreePointCloudChangeDetector<pcl::PointXYZIR> octree(bounds_.voxel_res);
+    pcl::octree::OctreePointCloudChangeDetector<pcl::PointXYZRTLT> octree(bounds_.voxel_res);
     octree.setInputCloud(background_pc_samples_[0]);
     octree.addPointsFromInputCloud();
     octree.switchBuffers();
@@ -1095,7 +1095,7 @@ void FeatureExtractor::extractRegionOfInterest(const sensor_msgs::msg::Image::Co
     }
 
     // Use custom statistical outlier removal (avoids FLANN issues)
-    statisticalOutlierRemoval<pcl::PointXYZIR>(subtracted_pc, cloud_filtered, bounds_.k, bounds_.z);
+    statisticalOutlierRemoval<pcl::PointXYZRTLT>(subtracted_pc, cloud_filtered, bounds_.k, bounds_.z);
 
     // Publish the board point cloud after background subtraction
     cloud_filtered->header.frame_id = lidar_frame_;
@@ -1410,14 +1410,14 @@ void FeatureExtractor::extractRegionOfInterest(const sensor_msgs::msg::Image::Co
 
       for (const auto& point : cloud_projected->points)
       {
-        ring_pointclouds[point.ring].push_back(point);
+        ring_pointclouds[point.line].push_back(point);
       }
 
       // Second: Arrange points in every ring in descending order of y
       // coordinate
       for (auto& ring : ring_pointclouds)
       {
-        std::sort(ring.begin(), ring.end(), [](pcl::PointXYZIR p1, pcl::PointXYZIR p2) { return p1.y > p2.y; });
+        std::sort(ring.begin(), ring.end(), [](pcl::PointXYZRTLT p1, pcl::PointXYZRTLT p2) { return p1.y > p2.y; });
       }
 
       // Third: Find minimum and maximum points in a ring

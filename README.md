@@ -1,4 +1,4 @@
-# Humble Edits
+# Humble and Livox Edits
 ## 1.2 Quick start Humble
 
 You can verify that this repository runs successfully by running this package on our provided quick-start data.
@@ -12,6 +12,7 @@ ros2 launch cam_lidar_calibration run_optimiser.launch.py import_samples:=true
 After calibration, the output is saved in the same directory as the imported samples. For this quickstart example, the output is saved in `cam_lidar_calibration/data/vlp/`.
 
 **2. Obtain and assess calibration results**
+
 This python script is no longer a ROS node, simply run the python file and pass the parameters. You probably need to create a virtual environment to run Numpy version <2 to match ROS 2 Humble.
 
 This step gives the estimated calibration parameters by taking a filtered mean of the best sets, and displaying the gaussian fitted histogram of estimated parameters. Additionally, we provide an assessment of the calibration results by computing the reprojection error over all provided data samples and a visualisation (if specified).
@@ -23,6 +24,14 @@ python3 src/cam_lidar_calibration/scripts/visualise_results.py --csv path-to-csv
 ```
 
 That's it! If this quick start worked successfully, you can begin using this tool for your own data. If not, please create an issue and we'll aim to resolve it promptly.
+
+# 2. Calibration with your own data
+
+To use this package with your own data, ensure that your bag file has the following topics:
+- **Lidar**: 3D pointcloud of point type XYZRTLT (Livox), published as [sensor_msgs::PointCloud2](http://docs.ros.org/en/api/sensor_msgs/html/msg/PointCloud2.html). This package relies on the ring value and so if you don't have that, you need to modify your lidar driver to use this package.
+- **Monocular camera:** an image published as [sensor_msgs::Image](http://docs.ros.org/en/api/sensor_msgs/html/msg/Image.html) and the corresponding meta-information topic ([sensor_msgs::CameraInfo](http://docs.ros.org/en/api/sensor_msgs/html/msg/CameraInfo.html)).
+
+All data and output files will be saved in the `cam_lidar_calibration/data/YYYY-MM-DD_HH-MM-SS/` folder.
 
 # Camera-LiDAR Calibration - V 3.0 (ROS2 Jazzy)
 
