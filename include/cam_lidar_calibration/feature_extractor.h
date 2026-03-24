@@ -116,7 +116,7 @@ private:
   std::shared_ptr<image_sub_type> image_sub_;
   std::shared_ptr<pc_sub_type> pc_sub_;
   std::shared_ptr<message_filters::Synchronizer<ImageLidarSyncPolicy>> image_pc_sync_;
-  int queue_rate_ = 10;  // This was 5 before but I changed to 10 cause
+  int queue_rate_ = 50;  // This was 5 before but I changed to 10 cause
                          // Robosense to camera A0 has big timestamp misalign
   int num_samples_ = 0;
 

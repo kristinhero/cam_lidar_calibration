@@ -1,9 +1,9 @@
 /**:
   ros__parameters:
     # Topics
-    camera_topic: "/vimbax_camera_XXXX/image_raw"
-    camera_info: "/vimbax_camera_2492/camera_info"
-    lidar_topic: "/livox/lidar"
+    camera_topic: "/vimbax_camera_28322/image_raw"
+    camera_info: "/vimbax_camera_28322/camera_info"
+    lidar_topic: "/livox/lidar_corrected"
 
     # Dynamic rqt_reconfigure default bounds
     x_min: 3.0

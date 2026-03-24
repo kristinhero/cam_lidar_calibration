@@ -51,7 +51,7 @@ def generate_launch_description():
     rviz_node = Node(
         package='rviz2',
         executable='rviz2',
-        name='rviz2',
+        name='rviz2_calibration',
         arguments=['-d', rviz_config],
         condition=UnlessCondition(LaunchConfiguration('import_samples'))
     )

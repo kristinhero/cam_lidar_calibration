@@ -168,6 +168,8 @@ FeatureExtractor::FeatureExtractor(rclcpp::Node::SharedPtr node)
 
   image_pc_sync_ = std::make_shared<message_filters::Synchronizer<ImageLidarSyncPolicy>>(
       ImageLidarSyncPolicy(queue_rate_), *image_sub_, *pc_sub_);
+
+  image_pc_sync_->setMaxIntervalDuration(rclcpp::Duration::from_seconds(0.1));
   image_pc_sync_->registerCallback(
       std::bind(&FeatureExtractor::extractRegionOfInterest, this,
                 std::placeholders::_1, std::placeholders::_2));
@@ -218,6 +220,11 @@ FeatureExtractor::FeatureExtractor(rclcpp::Node::SharedPtr node)
 
 void FeatureExtractor::callback_camerainfo(const sensor_msgs::msg::CameraInfo::ConstSharedPtr& msg)
 {
+  if (msg->k[0] == 0 || msg->d.size() < 4)
+  {
+    RCLCPP_WARN(node_->get_logger(), "CameraInfo not calibrated yet, skipping");
+    return;
+  }
   i_params_.cameramat.at<double>(0, 0) = msg->k[0];
   i_params_.cameramat.at<double>(0, 2) = msg->k[2];
   i_params_.cameramat.at<double>(1, 1) = msg->k[4];
@@ -588,7 +595,6 @@ void FeatureExtractor::optimise(const std::shared_ptr<rclcpp_action::ServerGoalH
   result->transform = transform;
   goal_handle->succeed(result);
   
-  rclcpp::shutdown();
   return;
 }
 
@@ -832,7 +838,7 @@ FeatureExtractor::locateChessboard(const sensor_msgs::msg::Image::ConstSharedPtr
 {
   // Convert to OpenCV image object
   cv_bridge::CvImagePtr cv_ptr;
-  cv_ptr = cv_bridge::toCvCopy(image, sensor_msgs::image_encodings::BGR8);
+  cv_ptr = cv_bridge::toCvCopy(image, image->encoding);
 
   cv::Mat gray;
   cv::cvtColor(cv_ptr->image, gray, CV_BGR2GRAY);
@@ -1324,7 +1330,7 @@ void FeatureExtractor::extractRegionOfInterest(const sensor_msgs::msg::Image::Co
 
         // Everything below this can be done at the end
         cv_bridge::CvImagePtr cv_ptr;
-        cv_ptr = cv_bridge::toCvCopy(image, sensor_msgs::image_encodings::BGR8);
+        cv_ptr = cv_bridge::toCvCopy(image, image->encoding);
 
         // Save image
         if (std::filesystem::create_directories(newdata_folder_))
